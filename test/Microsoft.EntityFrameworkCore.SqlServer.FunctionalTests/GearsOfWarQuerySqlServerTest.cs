@@ -827,7 +827,7 @@ FROM [Weapon] AS [w]",
 
             Assert.Equal(
                 @"SELECT [w].[Id], CASE
-    WHEN [w].[IsAutomatic] = 0 AND (([w].[SynergyWithId] = 1) AND [w].[SynergyWithId] IS NOT NULL)
+    WHEN ([w].[IsAutomatic] = 0) AND (([w].[SynergyWithId] = 1) AND [w].[SynergyWithId] IS NOT NULL)
     THEN N'Yes' ELSE N'No'
 END
 FROM [Weapon] AS [w]",
@@ -840,7 +840,7 @@ FROM [Weapon] AS [w]",
 
             Assert.Equal(
                 @"SELECT [w].[Id], CASE
-    WHEN [w].[IsAutomatic] = 0 AND (([w].[SynergyWithId] = 1) AND [w].[SynergyWithId] IS NOT NULL)
+    WHEN ([w].[IsAutomatic] = 0) AND (([w].[SynergyWithId] = 1) AND [w].[SynergyWithId] IS NOT NULL)
     THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT)
 END
 FROM [Weapon] AS [w]",
@@ -1466,6 +1466,30 @@ ORDER BY [t0].[LeaderNickname], [t0].[FullName], [t0].[FullName0]",
                 @"SELECT [w].[Id], [w].[AmmunitionType], [w].[IsAutomatic], [w].[Name], [w].[OwnerFullName], [w].[SynergyWithId]
 FROM [Weapon] AS [w]
 WHERE COALESCE([w].[IsAutomatic], 0) = 1",
+                Sql);
+        }
+
+        public override void Coalesce_operator_in_predicate_with_other_conditions()
+        {
+            base.Coalesce_operator_in_predicate_with_other_conditions();
+
+            Assert.Equal(
+                @"SELECT [w].[Id], [w].[AmmunitionType], [w].[IsAutomatic], [w].[Name], [w].[OwnerFullName], [w].[SynergyWithId]
+FROM [Weapon] AS [w]
+WHERE ([w].[AmmunitionType] = 1) AND (COALESCE([w].[IsAutomatic], 0) = 1)",
+                Sql);
+        }
+
+        public override void Coalesce_operator_in_projection_with_other_conditions()
+        {
+            base.Coalesce_operator_in_projection_with_other_conditions();
+
+            Assert.Equal(
+                @"SELECT CASE
+    WHEN ([w].[AmmunitionType] = 1) AND (COALESCE([w].[IsAutomatic], 0) = 1)
+    THEN CAST(1 AS BIT) ELSE CAST(0 AS BIT)
+END
+FROM [Weapon] AS [w]",
                 Sql);
         }
 
