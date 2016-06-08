@@ -2472,5 +2472,66 @@ namespace Microsoft.EntityFrameworkCore.Specification.Tests
                 }
             }
         }
+
+        [ConditionalFact]
+        public virtual void Correlated_subquery_doesnt_project_unnecessary_columns_in_top_level()
+        {
+            List<string> expected;
+
+            using (var context = CreateContext())
+            {
+                expected = (from l1 in context.LevelOne.ToList()
+                            where context.LevelTwo.ToList().Any(l2 => l2.Level1_Required_Id == l1.Id)
+                            select l1.Name).Distinct().ToList();
+            }
+
+            ClearLog();
+
+            using (var context = CreateContext())
+            {
+                var query = (from l1 in context.LevelOne
+                             where context.LevelTwo.Any(l2 => l2.Level1_Required_Id == l1.Id)
+                             select l1.Name).Distinct();
+
+                var result = query.ToList();
+
+                Assert.Equal(expected.Count, result.Count);
+                for (var i = 0; i < result.Count; i++)
+                {
+                    Assert.True(expected.Contains(result[i]));
+                }
+            }
+        }
+
+        [ConditionalFact]
+        public virtual void Correlated_nested_subquery_doesnt_project_unnecessary_columns_in_top_level()
+        {
+            List<string> expected;
+
+            using (var context = CreateContext())
+            {
+                expected = (from l1 in context.LevelOne.ToList()
+                            where context.LevelTwo.ToList().Any(l2 => context.LevelThree.ToList().Select(l3 => l1.Id).Any())
+                            select l1.Name).Distinct().ToList();
+            }
+
+            ClearLog();
+
+            using (var context = CreateContext())
+            {
+                var query = (from l1 in context.LevelOne
+                             where context.LevelTwo.Any(l2 => context.LevelThree.Select(l3 => l1.Id).Any())
+                             select l1.Name).Distinct();
+
+                var result = query.ToList();
+
+                Assert.Equal(expected.Count, result.Count);
+                for (var i = 0; i < result.Count; i++)
+                {
+                    Assert.True(expected.Contains(result[i]));
+                }
+            }
+        }
+
     }
 }
